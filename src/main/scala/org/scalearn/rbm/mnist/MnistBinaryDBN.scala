@@ -69,8 +69,8 @@ class MnistBinaryDBN(labels: String, images: String) {
 }
 
 object MnistBinaryDBN {
-
-  def start(labels: String, images: String, saveto: String) = {
+  
+  def train(labels: String, images: String, saveto: String):MnistBinaryDBN = {
 
     val m: MnistBinaryDBN = new MnistBinaryDBN(labels, images)
 
@@ -106,6 +106,12 @@ object MnistBinaryDBN {
 
       // StackedRBM.saveModel(m.rbm, saveto)
     }
+    m
+  }
+
+  def start(labels: String, images: String, saveto: String) = {
+
+     val m: MnistBinaryDBN = train(labels,images, saveto)
 
     var numCorrect: Double = 0
     var numWrong: Double = 0

@@ -42,24 +42,24 @@ class MnistReader(labelsFile: String, imagesFile: String) {
         var instances = testSet.get(inst.label)
         instances match {
           case None => {
-            val l: ArrayBuffer[MnistInstance] = ArrayBuffer(inst)
-            testSet.put(inst.label, l)
-          }
+              val l: ArrayBuffer[MnistInstance] = ArrayBuffer(inst)
+              testSet.put(inst.label, l)
+            }
           case Some(x) => {
-            x += inst
-          }
+              x += inst
+            }
         }
 
       } else {
         var instances = trainingSet.get(inst.label)
         instances match {
           case None => {
-            val l: ArrayBuffer[MnistInstance] = ArrayBuffer(inst)
-            trainingSet.put(inst.label, l)
-          }
+              val l: ArrayBuffer[MnistInstance] = ArrayBuffer(inst)
+              trainingSet.put(inst.label, l)
+            }
           case Some(x) => {
-            x += inst
-          }
+              x += inst
+            }
         }
       }
     }
@@ -127,9 +127,9 @@ object MnistReader {
 
   def main(args: Array[String]) {
 
-    val labelFile = if (args.size == 3) args(0) else "/home/htosun/dev/dataset/train-labels-idx1-ubyte.gz"
-    val featureFile = if (args.size == 3) args(1) else "/home/htosun/dev/dataset/train-images-idx3-ubyte.gz"
-    val outputDir = if (args.size == 3) args(2) else "/home/htosun/dev/output"
+    val labelFile = if (args.size == 3) args(0) else "/Users/htosun/dev/dataset/train-labels-idx1-ubyte.gz"
+    val featureFile = if (args.size == 3) args(1) else "/Users/htosun/dev/dataset/train-images-idx3-ubyte.gz"
+    val outputDir = if (args.size == 3) args(2) else "/Users/htosun/dev/output"
 
     val r = new MnistReader(labelFile, featureFile)
 

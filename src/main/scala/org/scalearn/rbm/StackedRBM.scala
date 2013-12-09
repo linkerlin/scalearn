@@ -1,6 +1,7 @@
 package org.scalearn.rbm
 
 import scala.io.Source
+import scala.util.Random
 import java.io.{ PrintWriter, File }
 import com.lambdaworks.jacks._
 import scala.util.parsing.json._
@@ -28,6 +29,38 @@ class StackedRBM() {
     this
   }
 
+  def generateSamples(batchSize:Int): List[Pair[Int, Layer]] = {
+    var result:List[Pair[Int, Layer]] = List()
+    val random = new Random()
+    for(m <- 0 until batchSize){
+      var current:Int = random.nextInt(10)
+
+      val r:SimpleRBM = this.innerRBMList(this.innerRBMList.size - 1)
+      var input:Layer = Layer(r.biasVisible.size)
+      for (i <- 0 until input.size - 10)
+        input.set(i, 0.0f)
+
+      input.set(input.size - 10 + current, 100000.0f)
+   
+      val it:Iterator[Tuple] = r.forwardGibbsSampler(input)
+      //sample once
+      it.next
+      input = it.next().visible
+      for (i <- (this.innerRBMList.size - 2) to 0 by -1){
+        val rbm:SimpleRBM =  this.innerRBMList(i)
+        if (input.size > rbm.biasHidden.size) {
+          val hidden:Array[Float] = (for(j <- 0 until rbm.biasHidden.size) yield input(i)) toArray
+        
+          input = Layer(hidden)
+         
+        }
+        input = rbm.activateVisible(input, null)
+      }
+      result = result :+ (current, input)
+    }
+    result
+  }
+  
   def build(): StackedRBM = {
     if (!innerRBMs.isEmpty)
       return this //already built
@@ -107,8 +140,8 @@ object StackedRBM {
 
         obj match {
           case Some(model: Map[String, Any]) => {
-            stackedRBM = StackedRBM(model)
-          }
+              stackedRBM = StackedRBM(model)
+            }
           case None => println("Parsing failed")
           case other => println("Unknown data structure: " + other)
         }
