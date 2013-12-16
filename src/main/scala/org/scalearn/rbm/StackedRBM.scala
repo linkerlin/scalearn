@@ -2,8 +2,7 @@ package org.scalearn.rbm
 
 import scala.io.Source
 import scala.util.Random
-import java.io.{ PrintWriter, File }
-import com.lambdaworks.jacks._
+import java.io.{ PrintWriter, File , DataOutput, DataInput}
 import scala.util.parsing.json._
 
 class StackedRBM() {
@@ -35,17 +34,20 @@ class StackedRBM() {
     for(m <- 0 until batchSize){
       var current:Int = random.nextInt(10)
 
+      println("Size = "+this.innerRBMs.size)
       val r:SimpleRBM = this.innerRBMList(this.innerRBMList.size - 1)
       var input:Layer = Layer(r.biasVisible.size)
-      for (i <- 0 until input.size - 10)
+      for (i <- 0 until input.size)
         input.set(i, 0.0f)
 
-      input.set(input.size - 10 + current, 100000.0f)
-   
+      val labelIndex = input.size - 10 + current
+      input.set(labelIndex, 100000.0f)
+      println("Values for label:"+current+" index:"+(labelIndex)+ " value"+input(labelIndex))
       val it:Iterator[Tuple] = r.forwardGibbsSampler(input)
-      //sample once
-      it.next
-      input = it.next().visible
+      for(l<-0 until 2){
+        input = it.next.visible
+      }
+  
       for (i <- (this.innerRBMList.size - 2) to 0 by -1){
         val rbm:SimpleRBM =  this.innerRBMList(i)
         if (input.size > rbm.biasHidden.size) {
@@ -115,11 +117,27 @@ class StackedRBM() {
 
     energy
   }
-
+  
+  def save(output:DataOutput)={
+    output.write(Layer.MAGIC)
+    output.writeInt(innerRBMs.size)
+    for (rbm <- innerRBMs) {
+      rbm.save(output)
+    }
+  }
 }
 
 object StackedRBM {
 
+  def apply(input:DataInput):StackedRBM  = {
+    val magic:Array[Byte] = new Array(4)
+    input.readFully(magic)
+    val rbms:Int = input.readInt()
+    val rbm: StackedRBM = new StackedRBM()
+    rbm.innerRBMs = (for(i <- 0 until rbms) yield SimpleRBM(input)).toList
+    rbm
+  }
+  
   def apply(model: Map[String, Any]): StackedRBM = {
     val rbms: List[Map[String, Any]] = model("stack").asInstanceOf[List[Map[String, Any]]]
     val rbmList: List[SimpleRBM] = (for (rbm <- rbms) yield SimpleRBM(rbm))

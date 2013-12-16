@@ -1,5 +1,7 @@
 package org.scalearn.rbm.mnist
 
+import javax.media.jai.RenderedOp
+import javax.media.jai.operator.SubsampleAverageDescriptor
 import org.scalearn.rbm._
 
 import scala.io._
@@ -10,6 +12,7 @@ import java.io._
 
 import javax.imageio.ImageIO
 import java.awt.Graphics2D
+import java.awt.RenderingHints
 import java.awt.image.{ BufferedImage, RenderedImage, WritableRaster }
 import java.util.zip.GZIPInputStream
 
@@ -116,15 +119,27 @@ object MnistReader {
     }
     ppmOut.close
   }
-  def writeToJPEG(file: String, cols: Int, rows: Int, features: Array[Int]): Unit = {
+  def writeToJPEG(file: String, cols: Int, rows: Int, features: Array[Int], scale:Boolean = false, scaleFactor:Float = 1.0f): Unit = {
     val in: BufferedImage = new BufferedImage(cols, rows, BufferedImage.TYPE_INT_RGB)
     val out: FileOutputStream = new FileOutputStream(file)
     val r: WritableRaster = in.getRaster
     r.setDataElements(0, 0, cols, rows, features)
-    ImageIO.write(in, "JPG", out)
+    
+    ImageIO.write(if(scale) scaleImage(in, scaleFactor) else in, "JPG", out)
     out.close
   }
 
+  def scaleImage(image:RenderedImage, scaleFactor:Float):RenderedImage = {
+
+    val hints:RenderingHints  = new RenderingHints(RenderingHints.KEY_RENDERING,RenderingHints.VALUE_RENDER_QUALITY)
+
+    println(" Scale Factor:"+scaleFactor)
+    val resizeOp:RenderedOp = SubsampleAverageDescriptor.create(image, scaleFactor, scaleFactor, hints)
+
+     return resizeOp.getAsBufferedImage()
+   
+  }
+  
   def main(args: Array[String]) {
 
     val labelFile = if (args.size == 3) args(0) else "/Users/htosun/dev/dataset/train-labels-idx1-ubyte.gz"

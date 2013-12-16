@@ -3,7 +3,9 @@ package org.scalearn.rbm
 import scala.util.Random
 import scala.math
 import scala.util.parsing.json._
-
+import java.io.DataInput
+import java.io.DataOutput
+import scala.collection.Iterator
 class SimpleRBM() {
 
   //Configurations
@@ -141,9 +143,32 @@ class SimpleRBM() {
       t
     }
   }
+  
+  def save(output:DataOutput) = {
+    output.write(Layer.MAGIC)
+    output.writeBoolean(this.gaussianVisibles)
+    biasVisible.save(output)
+    biasHidden.save(output)
+    for (i <- 0 until weights.length)
+      weights(i).save(output)
+    
+  }
 }
 
 object SimpleRBM {
+  
+  def apply(input:DataInput):SimpleRBM = {
+    val model: SimpleRBM = new SimpleRBM()
+    model.distribution = ProbabilityDistribution(new Random())
+    val magic:Array[Byte] = new Array(4)
+    input.readFully(magic)
+    model.gaussianVisibles = input.readBoolean()
+    model.biasVisible  = Layer(input)
+    model.biasHidden = Layer(input)
+    model.weights =  (for (i <- 0 until model.biasHidden.size) yield Layer(input)).toArray
+    model
+  }
+  
   def apply(numVisible: Int, numHidden: Int, gaussianVisibles: Boolean, generator: Random = null): SimpleRBM = {
     val model: SimpleRBM = new SimpleRBM()
     model.initializeConfiguration(numVisible, numHidden, gaussianVisibles, generator)
@@ -152,6 +177,7 @@ object SimpleRBM {
 
   def apply(bVisible: Array[Float], bHidden: Array[Float], w: Array[Array[Float]], gVisibles: Boolean): SimpleRBM = {
     val model: SimpleRBM = new SimpleRBM()
+    model.distribution = ProbabilityDistribution(new Random())
     model.biasVisible = Layer(bVisible)
     model.biasHidden = Layer(bHidden)
     model.weights = for (l <- w) yield Layer(l)
@@ -165,11 +191,12 @@ object SimpleRBM {
     val links = for (w <- model.weights) yield new JSONArray(w.toArray.toList)
 
     new JSONObject(Map("gaussianVisibles" -> model.gaussianVisibles,
-      "biasVisible" -> new JSONArray(model.biasVisible.toArray.toList),
-      "biasHidden" -> new JSONArray(model.biasHidden.toArray.toList),
-      "weights" -> new JSONArray(links.toList)))
+                       "biasVisible" -> new JSONArray(model.biasVisible.toArray.toList),
+                       "biasHidden" -> new JSONArray(model.biasHidden.toArray.toList),
+                       "weights" -> new JSONArray(links.toList)))
   }
 
+ 
   def apply(model: Map[String, Any]): SimpleRBM = {
     val gaussianVisibles = model("gaussianVisibles").asInstanceOf[Boolean]
     val biasVisible: Array[Float] = model("biasVisible").asInstanceOf[Array[Float]]

@@ -1,6 +1,8 @@
 package org.scalearn.rbm
 
 import java.awt.image.{ BufferedImage }
+import java.io.DataInput
+import java.io.DataOutput
 
 trait Layer {
   def apply(i: Int): Float
@@ -19,8 +21,15 @@ trait Layer {
   def toGaussian: Unit
   def mean: Float
   def stddev: Float
+  def save(output:DataOutput) = {
+    output.write(Layer.MAGIC)
+    output.writeInt(size)
+    for(i <- 0 until size){
+      output.writeFloat(this(i))
+    }
+  }
+  
 }
-
 class MutableLayer(array: Array[Float]) extends Layer {
   private val a = array
   private lazy val m: Float = Utilities.mean(this)
@@ -56,7 +65,16 @@ class MutableLayer(array: Array[Float]) extends Layer {
 }
 
 object Layer {
-
+  def MAGIC = Array[Byte](7, 13,19,15)
+  
+  def apply(input:DataInput):Layer = {
+    val magic:Array[Byte] = new Array(4)
+    input.readFully(magic)
+    val size = input.readInt
+    val vect:Array[Float] = (for(i <- 0 until size) yield input.readFloat).toArray
+    Layer(vect)
+  }
+  
   def apply(array: Array[Float]): Layer = new MutableLayer(array)
   def apply(size: Int): Layer = Layer(new Array[Float](size))
   def apply(from: Array[Int]): Layer = {

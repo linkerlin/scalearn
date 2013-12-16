@@ -1,5 +1,12 @@
 package org.scalearn.rbm.mnist
 
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
+import java.io.DataInputStream
+import java.io.DataOutputStream
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import org.scalearn.rbm._
 
 /**
@@ -78,23 +85,24 @@ object MnistBinaryDBN {
 
     var prevStateLoaded: Boolean = false
 
-    //      val s:StackedRBM = StackedRBM(saveto)
-    //      if(s != null) {    
-    //        m.rbm = s
-    //        prevStateLoaded = true
-    //      }
-    //         
-    //    
+    if(new File(saveto).exists){
+      val s:StackedRBM = StackedRBM(new DataInputStream(new BufferedInputStream(new FileInputStream(saveto))))
+      if(s != null) {    
+        m.rbm = s
+        prevStateLoaded = true
+      }
+    }
+    
 
     if (!prevStateLoaded) {
 
       m.rbm
-        .addLayer(m.dr.rows * m.dr.cols, false)
-        .addLayer(500, false)
-        .addLayer(500, false)
-        .addLayer(2000, false)
-        .addCustomInputUnits(510)
-        .build()
+      .addLayer(m.dr.rows * m.dr.cols, false)
+      .addLayer(500, false)
+      .addLayer(500, false)
+      .addLayer(2000, false)
+      .addCustomInputUnits(510)
+      .build()
       println("Iteration:" + numIterations)
       println("Training level 1")
       m.learn(numIterations, false, 1)
@@ -104,14 +112,17 @@ object MnistBinaryDBN {
       m.learn(numIterations, true, 3)
       println("Iteration:" + numIterations)
 
-      // StackedRBM.saveModel(m.rbm, saveto)
+      val out:DataOutputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(saveto)))
+      m.rbm.save(out)
+      out.flush()
+      out.close()
     }
     m
   }
-
+  
   def start(labels: String, images: String, saveto: String) = {
 
-     val m: MnistBinaryDBN = train(labels,images, saveto)
+    val m: MnistBinaryDBN = train(labels,images, saveto)
 
     var numCorrect: Double = 0
     var numWrong: Double = 0
